@@ -1,0 +1,50 @@
+---
+# Variable setup.
+- name: Include RedHat OS-specific variables.
+  include_vars: "RedHat.yml"
+  when: ansible_os_family == 'RedHat'
+
+- name: Include Ubuntu16 OS-specific variables.
+  include_vars: "Ubuntu16.yml"
+  when: ansible_os_family == 'Debian' and ansible_distribution_release == 'xenial'
+
+- name: Include default Debian OS-specific variables.
+  include_vars: "Debian.yml"
+  when: ansible_os_family == 'Debian' and ansible_distribution_release != 'xenial'
+
+- name: Define php_packages.
+  set_fact:
+    php_packages: "{{ __php_packages | list }}"
+  when: php_packages is not defined
+
+- name: Define php_webserver_daemon.
+  set_fact:
+    php_webserver_daemon: "{{ __php_webserver_daemon }}"
+  when: php_webserver_daemon is not defined
+
+- name: Define php_conf_path.
+  set_fact:
+    php_conf_path: "{{ __php_conf_path }}"
+  when: php_conf_path is not defined
+
+- name: Define php_extension_conf_path.
+  set_fact:
+    php_extension_conf_path: "{{ __php_extension_conf_path }}"
+  when: php_extension_conf_path is not defined
+
+
+# Setup/install tasks.
+- include: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- include: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Check the installed version of PHP.
+  shell: '{{ php_executable }} -r "echo php_installed_version;"'
+  register: php_installed_version
+  changed_when: false
+  always_run: yes
+
+# Configure PHP.
+- include: configure.yml
